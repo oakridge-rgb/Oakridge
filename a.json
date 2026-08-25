@@ -1,11 +1,11 @@
 {
   "changelog": [
     {
-      "version": "v5.0",
-      "date": "2026-08-22",
+      "version": "v5.1.0",
+      "date": "2026-08-25",
       "changes": [
-        " added music", 
-        " added emulator", 
+        "added music", 
+        "added emulator", 
         "added settings and custom backgrounds", 
         "added games.html",
         "Added changelog",
