@@ -1,0 +1,20 @@
+{
+  "changelog": [
+    {
+      "version": "v5.0",
+      "date": "2026-08-22",
+      "changes": [
+        " added music", 
+        " added emulator", 
+        "added settings and custom backgrounds", 
+        "added games.html",
+        "Added changelog",
+        "Mouse-following glow effect",
+        "added daily messages or whateva",
+        "Background image support via /img/background.png",
+        "Bottom-left FAB navigation menu",
+        "Added changelog system"
+      ]
+    }
+  ]
+}

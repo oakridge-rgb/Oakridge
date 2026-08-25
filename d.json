@@ -1,0 +1,15 @@
+{
+  "announcements": [
+    {
+      "id": "fate-v5-1-teaser",
+      "title": "FATE V5.1",
+      "subtitle": "Many more games coming soon",
+      "message": "Up to 14k games that are playable (technically)",
+      "image": "https://images.unsplash.com/...",
+      "link": "",
+      "linkText": "wowzers",
+      "active": true,
+      "badge": "Coming Soon"
+    }
+  ]
+}

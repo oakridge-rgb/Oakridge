@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Oakridge Heights Academy</title>
+<link rel="shortcut icon" href="media/logo.svg" type="image/x-icon" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{--primary:#f59e0b;--secondary:#ef4444;--accent:#10b981;--accent2:#06b6d4;--bg-deep:#050505;--glass:rgba(0,0,0,0.55);--glass-border:rgba(255,255,255,0.1);--text:#f8fafc;--text-muted:#cbd5e1;--text-dim:#64748b;}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--bg-deep);color:var(--text);font-family:"Inter",sans-serif;min-height:100vh;overflow-x:hidden;padding-top:80px}
+.bg-image{position:fixed;inset:0;z-index:0;background:url("/img/background.png") center center/cover no-repeat}
+.bg-overlay{position:fixed;inset:0;z-index:1;background:rgba(5,5,5,0.6);backdrop-filter:blur(4px)}
+#particleCanvas{position:fixed;inset:0;z-index:2;pointer-events:none}
+#mouseGlow{position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,0.12) 0%,transparent 70%);pointer-events:none;z-index:3;transform:translate(-50%,-50%);transition:opacity .3s;opacity:0}
+.nav-glass{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(5,5,5,0.6);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--glass-border);padding:16px 24px}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(245,158,11,0.4)}
+.nav-logo span{font-weight:800;font-size:18px;color:white;font-family:"Space Grotesk",sans-serif}
+.nav-title{font-family:"Space Grotesk",sans-serif;font-size:1.25rem;font-weight:700;background:linear-gradient(135deg,#fff,#fcd34d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:8px;align-items:center}
+.nav-link{padding:10px 20px;border-radius:12px;font-weight:500;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:8px;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.nav-link:hover{background:rgba(245,158,11,0.1);color:#fff}
+.nav-link.active{background:rgba(245,158,11,0.15);color:var(--primary)}
+.panic-btn{padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-weight:700;font-size:.85rem;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(220,38,38,0.4);transition:all .3s ease;text-transform:uppercase;letter-spacing:.5px}
+.panic-btn:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(220,38,38,0.6)}
+.main{position:relative;z-index:4;max-width:1200px;margin:0 auto;padding:40px 24px}
+.page-header{text-align:center;margin-bottom:3rem}
+.page-header h1{font-family:"Space Grotesk",sans-serif;font-size:clamp(2.5rem,8vw,4rem);font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 0%,#fcd34d 50%,#f59e0b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-header p{color:var(--text-muted);margin-top:.5rem;font-size:1rem}
+.upload-zone{border:2px dashed rgba(245,158,11,0.3);border-radius:24px;padding:3rem 2rem;text-align:center;cursor:pointer;background:rgba(245,158,11,0.03);transition:all .3s ease;margin-bottom:2rem;position:relative;overflow:hidden}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--primary);background:rgba(245,158,11,0.08);box-shadow:0 0 40px rgba(245,158,11,0.1)}
+.upload-zone.dragover{transform:scale(1.01)}
+.upload-zone::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(245,158,11,0.05) 50%,transparent 60%);transform:translateX(-100%);transition:transform .6s ease}
+.upload-zone:hover::before{transform:translateX(100%)}
+.upload-icon{width:64px;height:64px;margin:0 auto 1rem;color:var(--primary);opacity:.8}
+.upload-zone h3{font-family:"Space Grotesk",sans-serif;font-size:1.5rem;font-weight:600;margin-bottom:.5rem}
+.upload-zone p{color:var(--text-dim);font-size:.9rem}
+.upload-zone input[type="file"]{display:none}
+.systems-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1rem;margin-bottom:2rem}
+.system-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.system-card:hover{transform:translateY(-4px);border-color:rgba(245,158,11,0.3);box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+.system-card.active{border-color:var(--primary);background:rgba(245,158,11,0.08);box-shadow:0 0 20px rgba(245,158,11,0.15)}
+.system-card .sys-icon{width:40px;height:40px;margin:0 auto .5rem;display:block}
+.system-card .sys-name{font-weight:600;font-size:.85rem;color:var(--text)}
+.system-card .sys-ext{font-size:.7rem;color:var(--text-dim);margin-top:.25rem}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-header h3{font-family:"Space Grotesk",sans-serif;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.rom-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.rom-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1rem;cursor:pointer;transition:all .3s ease;display:flex;align-items:center;gap:12px;position:relative}
+.rom-card:hover{transform:translateY(-2px);border-color:rgba(245,158,11,0.3);box-shadow:0 8px 25px rgba(0,0,0,0.3)}
+.rom-card .rom-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rom-card .rom-icon svg{width:24px;height:24px;fill:white}
+.rom-card .rom-info{flex:1;min-width:0}
+.rom-card .rom-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rom-card .rom-meta{font-size:.75rem;color:var(--text-dim);margin-top:.25rem}
+.rom-card .rom-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s ease}
+.rom-card:hover .rom-actions{opacity:1}
+.rom-action{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+.rom-action:hover{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:var(--primary)}
+.rom-action.danger:hover{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:var(--secondary)}
+.rom-action svg{width:14px;height:14px;fill:currentColor}
+.empty-roms{text-align:center;padding:3rem 1rem;color:var(--text-dim)}
+.empty-roms svg{width:48px;height:48px;fill:#334155;margin-bottom:1rem}
+.preloaded-section{margin-bottom:2rem}
+.preloaded-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem}
+.preload-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;cursor:pointer;transition:all .3s ease}
+.preload-card:hover{transform:translateY(-4px);border-color:rgba(245,158,11,0.3);box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+.preload-card .pl-img{aspect-ratio:1;background:linear-gradient(135deg,#1a1a2e,#0f0f1a);display:flex;align-items:center;justify-content:center}
+.preload-card .pl-img svg{width:48px;height:48px;fill:rgba(255,255,255,0.6)}
+.preload-card .pl-info{padding:12px}
+.preload-card .pl-name{font-weight:600;font-size:.85rem;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preload-card .pl-sys{font-size:.7rem;color:var(--text-dim);text-align:center;margin-top:.25rem}
+.emu-overlay{position:fixed;inset:0;z-index:9998;background:rgba(5,5,5,0.95);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:20px}
+.emu-overlay.open{display:flex;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.emu-box{width:100%;max-width:1400px;height:90vh;background:rgba(10,10,10,0.98);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--glass-border);box-shadow:0 25px 50px rgba(0,0,0,0.5);animation:slideUp .4s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.emu-header{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.5);border-bottom:1px solid var(--glass-border)}
+.emu-title{font-family:"Space Grotesk",sans-serif;font-size:1rem;font-weight:600;flex:1;text-align:center;padding:0 1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emu-actions{display:flex;gap:8px}
+.emu-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;font-size:.85rem}
+.emu-btn:hover{background:rgba(245,158,11,0.2);border-color:rgba(245,158,11,0.4)}
+.emu-btn.close:hover{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4)}
+.emu-content{flex:1;position:relative;background:#000}
+#emuContainer{width:100%;height:100%;display:none;position:relative;background:#000}
+#emuContainer.active{display:block}
+.emu-placeholder{color:var(--text-dim);text-align:center;padding:2rem}
+.emu-placeholder h4{font-family:"Space Grotesk",sans-serif;font-size:1.25rem;margin-bottom:.5rem;color:var(--text)}
+.states-panel{position:fixed;top:0;right:-350px;width:100%;max-width:350px;height:100vh;background:rgba(10,10,10,0.98);backdrop-filter:blur(20px);border-left:1px solid var(--glass-border);z-index:9999;transition:right .4s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.states-panel.open{right:0}
+.states-header{padding:1.5rem;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center}
+.states-header h3{font-family:"Space Grotesk",sans-serif;font-size:1.1rem;font-weight:600}
+.states-body{padding:1.5rem}
+.state-item{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:.75rem;cursor:pointer;transition:all .2s ease}
+.state-item:hover{border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.05)}
+.state-item .state-slot{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:white;flex-shrink:0}
+.state-item .state-info{flex:1}
+.state-item .state-time{font-size:.75rem;color:var(--text-dim)}
+.state-item .state-name{font-weight:500;font-size:.85rem}
+.fab-container{position:fixed;bottom:24px;left:24px;z-index:100;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.fab-btn{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;box-shadow:0 8px 32px rgba(245,158,11,0.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative;z-index:102}
+.fab-btn:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(245,158,11,0.6)}
+.fab-btn .line{display:block;width:22px;height:2.5px;background:white;border-radius:2px;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.fab-btn.active .line:nth-child(1){transform:translateY(7.5px) rotate(45deg)}
+.fab-btn.active .line:nth-child(2){opacity:0;transform:scaleX(0)}
+.fab-btn.active .line:nth-child(3){transform:translateY(-7.5px) rotate(-45deg)}
+.fab-menu{position:absolute;bottom:70px;left:0;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(20px) scale(.8);transform-origin:bottom left;pointer-events:none;transition:all .4s cubic-bezier(.34,1.56,.64,1)}
+.fab-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.fab-item{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(5,5,5,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;color:var(--text);text-decoration:none;font-weight:500;font-size:.95rem;white-space:nowrap;opacity:0;transform:translateX(-30px);transition:all .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.fab-menu.open .fab-item{opacity:1;transform:translateX(0)}
+.fab-menu.open .fab-item:nth-child(1){transition-delay:.05s}
+.fab-menu.open .fab-item:nth-child(2){transition-delay:.1s}
+.fab-menu.open .fab-item:nth-child(3){transition-delay:.15s}
+.fab-menu.open .fab-item:nth-child(4){transition-delay:.2s}
+.fab-item:hover{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);transform:translateX(6px)}
+.fab-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);z-index:99;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.fab-backdrop.open{opacity:1;pointer-events:all}
+.sys-gba{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+.sys-snes{background:linear-gradient(135deg,#7c3aed,#a855f7)}
+.sys-nes{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.sys-nds{background:linear-gradient(135deg,#06b6d4,#0891b2)}
+.sys-n64{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.sys-psx{background:linear-gradient(135deg,#64748b,#475569)}
+.sys-genesis{background:linear-gradient(135deg,#10b981,#059669)}
+.sys-gb{background:linear-gradient(135deg,#8b5cf6,#7c3aed)}
+.sys-gbc{background:linear-gradient(135deg,#ec4899,#db2777)}
+.footer{margin-top:4rem;padding:2rem;text-align:center;border-top:1px solid var(--glass-border);color:var(--text-muted);font-size:.875rem}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg-deep)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--primary),var(--secondary));border-radius:4px}
+@media(max-width:640px){
+  .nav-title{display:none}.nav-links .nav-link span{display:none}.nav-links .nav-link{padding:8px}
+  .panic-btn span{display:none}.panic-btn{padding:8px}.systems-grid{grid-template-columns:repeat(3,1fr)}
+  .rom-grid{grid-template-columns:1fr}.preloaded-grid{grid-template-columns:repeat(2,1fr)}
+  .emu-box{height:100vh;border-radius:0}.emu-overlay{padding:0}.fab-container{bottom:16px;left:16px}
+}
+</style>
+</head>
+<body>
+<div class="bg-image"></div><div class="bg-overlay"></div>
+<canvas id="particleCanvas"></canvas><div id="mouseGlow"></div>
+
+<div class="fab-backdrop" id="fabBackdrop" onclick="toggleFab()"></div>
+<div class="fab-container">
+  <div class="fab-menu" id="fabMenu">
+    <a href="index.html" class="fab-item"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></a>
+    <a href="games.html" class="fab-item"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Games</span></a>
+    <a href="settings.html" class="fab-item"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Settings</span></a>
+  </div>
+  <button class="fab-btn" id="fabBtn" onclick="toggleFab()" aria-label="Menu"><span class="line"></span><span class="line"></span><span class="line"></span></button>
+</div>
+
+<div class="states-panel" id="statesPanel">
+  <div class="states-header"><h3>Save States</h3><button class="nav-link" style="padding:8px;" onclick="toggleStatesPanel()"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+  <div class="states-body" id="statesBody"><div class="empty-roms"><p>Load a game to see save states</p></div></div>
+</div>
+
+<div class="emu-overlay" id="emuOverlay" onclick="if(event.target===this)closeEmu()">
+  <div class="emu-box">
+    <div class="emu-header">
+      <div class="emu-actions"><button class="emu-btn" onclick="toggleStatesPanel()" title="Save States"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></button></div>
+      <div class="emu-title" id="emuTitle">Emulator</div>
+      <div class="emu-actions">
+        <button class="emu-btn" onclick="fullscreenEmu()" title="Fullscreen"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        <button class="emu-btn close" onclick="closeEmu()" title="Close"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      </div>
+    </div>
+    <div class="emu-content"><div id="emuContainer"></div><div class="emu-placeholder" id="emuPlaceholder"><h4>Ready to Play</h4><p>Select a game from the library or upload a ROM</p></div></div>
+  </div>
+</div>
+
+<nav class="nav-glass">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <button class="panic-btn" onclick="triggerPanic()" title="Emergency Exit"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><span>Panic</span></button>
+      <div style="width:1px;height:28px;background:rgba(255,255,255,0.1);margin-left:8px;"></div>
+      <a href="index.html" class="nav-brand" style="text-decoration:none;margin-left:8px;"><div class="nav-logo"><span>F</span></div><span class="nav-title">FATE V5</span></a>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></a>
+      <a href="games.html" class="nav-link"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Games</span></a>
+      <a href="e.html" class="nav-link active"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg><span>Emulator</span></a>
+      <button class="nav-link" onclick="toggleSettings()" title="Settings"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header"><h1>Emulator</h1><p>Play classic games right in your browser.</p></div>
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('romInput').click()">
+    <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3.75 3.75M12 9.75l3.75 3.75M3 17.25V6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v10.5a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 17.25z"/></svg>
+    <h3>Drop a ROM here</h3><p>or click to browse — supports .gba .nes .smc .nds .n64 .bin .zip</p>
+    <input type="file" id="romInput" accept=".gba,.nes,.smc,.sfc,.nds,.n64,.z64,.v64,.bin,.cue,.iso,.md,.gen,.smd,.gb,.gbc,.zip" onchange="handleFileSelect(event)" />
+  </div>
+  <div class="section-header"><h3><svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Select System</h3></div>
+  <div class="systems-grid" id="systemsGrid"></div>
+  <div class="preloaded-section">
+    <div class="section-header"><h3><svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Free Homebrew Games</h3></div>
+    <div class="preloaded-grid" id="preloadedGrid"></div>
+  </div>
+  <div class="section-header" style="margin-top:2rem;"><h3><svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Your Library</h3><span style="color:var(--text-dim);font-size:.85rem;" id="libCount">0 ROMs</span></div>
+  <div class="rom-grid" id="romGrid"><div class="empty-roms"><svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg><h4 style="font-family:'Space Grotesk',sans-serif;margin-bottom:.5rem;">No ROMs yet</h4><p>Upload a ROM file to get started</p></div></div>
+</main>
+<footer class="footer"><p>FATE V5 Emulator — Bring your own ROMs</p></footer>
+
+<script>
+const ICONS={gba:'<svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>',snes:'<svg viewBox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM16.5 9l-3 3 3 3H22V9h-5.5zM9 16.5V22h6v-5.5l-3-3-3 3z"/></svg>',nes:'<svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>',nds:'<svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>',n64:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>',psx:'<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>',genesis:'<svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11z M12 5.84L13.93 9h-3.87z M17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5z M5 21.5h8v-8H5v8z"/></svg>',gb:'<svg viewBox="0 0 24 24"><path d="M7 22h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2zM12 20c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>',gbc:'<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/></svg>',controller:'<svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'};
+
+const SYSTEMS={gba:{name:'Game Boy Advance',core:'mgba',icon:'gba',exts:['gba'],color:'sys-gba'},snes:{name:'Super Nintendo',core:'snes',icon:'snes',exts:['smc','sfc'],color:'sys-snes'},nes:{name:'NES',core:'nes',icon:'nes',exts:['nes'],color:'sys-nes'},nds:{name:'Nintendo DS',core:'melonds',icon:'nds',exts:['nds'],color:'sys-nds'},n64:{name:'Nintendo 64',core:'mupen64plus_next',icon:'n64',exts:['n64','z64','v64'],color:'sys-n64'},psx:{name:'PlayStation',core:'pcsx_rearmed',icon:'psx',exts:['bin','cue','chd'],color:'sys-psx'},genesis:{name:'Sega Genesis',core:'genesis_plus_gx',icon:'genesis',exts:['md','gen','smd'],color:'sys-genesis'},gb:{name:'Game Boy',core:'gambatte',icon:'gb',exts:['gb'],color:'sys-gb'},gbc:{name:'Game Boy Color',core:'gambatte',icon:'gbc',exts:['gbc'],color:'sys-gbc'}};
+
+const PRELOADED=[
+  {name:'Anguna',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/anguna.gba'},
+  {name:'Astrohawk',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/astrohawk.gba'},
+  {name:'Blast Arena',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/blastarena.gba'},
+  {name:'Powder',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/powder.gba'},
+  {name:'Spout',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/spout.gba'},
+  {name:'Tetrigram',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/tetrigram.gba'},
+  {name:'Waimanu',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/waimanu.gba'},
+  {name:'Wonkie Guy',system:'gba',url:'https://cdn.jsdelivr.net/gh/retrobrews/gba-games@master/wonkieguy.gba'},
+  {name:'Driar',system:'nes',url:'https://cdn.jsdelivr.net/gh/retrobrews/nes-games@master/driar.nes'},
+  {name:'The Mad Wizard',system:'nes',url:'https://cdn.jsdelivr.net/gh/retrobrews/nes-games@master/themadwizard.nes'},
+  {name:'Nova the Squirrel',system:'nes',url:'https://cdn.jsdelivr.net/gh/retrobrews/nes-games@master/novasquirrel.nes'},
+  {name:'Super Tilt Bro',system:'nes',url:'https://cdn.jsdelivr.net/gh/retrobrews/nes-games@master/supertiltbro.nes'},
+  {name:'Flappy Bird',system:'nes',url:'https://cdn.jsdelivr.net/gh/retrobrews/nes-games@master/flappybird.nes'},
+  {name:'Super Boss Gaiden',system:'snes',url:'https://cdn.jsdelivr.net/gh/retrobrews/snes-games@master/superbossgaiden.smc'},
+  {name:'Uwol',system:'snes',url:'https://cdn.jsdelivr.net/gh/retrobrews/snes-games@master/uwol.smc'},
+  {name:'Cave Story',system:'genesis',url:'https://cdn.jsdelivr.net/gh/retrobrews/md-games@master/cavestory.bin'},
+  {name:'Old Towers',system:'genesis',url:'https://cdn.jsdelivr.net/gh/retrobrews/md-games@master/oldtowers.bin'},
+];
+
+let activeSystem='gba',romLibrary=[],currentRom=null,db=null;
+const LS={ROMS:'fate_v5_roms',FAVS:'fate_v5_rom_favs',STATES:'fate_v5_states',CLOAK:'fate_v5_cloak',PANIC:'fate_v5_panic'};
+function $(id){return document.getElementById(id)}
+
+function initDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('FateV5Emu',1);req.onerror=()=>reject(req.error);req.onsuccess=()=>{db=req.result;resolve(db)};req.onupgradeneeded=(e)=>{const d=e.target.result;if(!d.objectStoreNames.contains('roms'))d.createObjectStore('roms',{keyPath:'id'})}})}
+async function saveRomToDB(id,data){if(!db)return;const tx=db.transaction('roms','readwrite'),store=tx.objectStore('roms');await new Promise((res,rej)=>{const r=store.put({id,data});r.onsuccess=res;r.onerror=rej})}
+async function getRomFromDB(id){if(!db)return null;const tx=db.transaction('roms','readonly'),store=tx.objectStore('roms');return new Promise((res,rej)=>{const r=store.get(id);r.onsuccess=()=>res(r.result?.data||null);r.onerror=rej})}
+async function deleteRomFromDB(id){if(!db)return;const tx=db.transaction('roms','readwrite'),store=tx.objectStore('roms');await new Promise((res,rej)=>{const r=store.delete(id);r.onsuccess=res;r.onerror=rej})}
+
+async function init(){await initDB();loadStorage();initParticles();initMouseGlow();initKeyboard();renderSystems();renderPreloaded();renderLibrary();initDragDrop();loadSettings()}
+function loadStorage(){try{romLibrary=JSON.parse(localStorage.getItem(LS.ROMS))||[]}catch(e){romLibrary=[]}}
+function saveLibrary(){localStorage.setItem(LS.ROMS,JSON.stringify(romLibrary))}
+
+function renderSystems(){const grid=$('systemsGrid');grid.innerHTML=Object.entries(SYSTEMS).map(([key,sys])=>{const svg=ICONS[sys.icon]||ICONS.controller;return`<div class="system-card ${key===activeSystem?'active':''}" onclick="setSystem('${key}')"><div class="sys-icon">${svg}</div><div class="sys-name">${sys.name}</div><div class="sys-ext">.${sys.exts.join(' .')}</div></div>`}).join('')}
+function setSystem(sys){activeSystem=sys;renderSystems()}
+
+function renderPreloaded(){const grid=$('preloadedGrid');grid.innerHTML=PRELOADED.map(game=>{const sys=SYSTEMS[game.system]||SYSTEMS.gba;const svg=ICONS[sys.icon]||ICONS.controller;return`<div class="preload-card" onclick="launchPreloaded('${game.url}',${JSON.stringify(game.name)},'${game.system}')"><div class="pl-img ${sys.color}">${svg}</div><div class="pl-info"><div class="pl-name">${escapeHtml(game.name)}</div><div class="pl-sys">${sys.name}</div></div></div>`}).join('')}
+
+let lastRomArgs=null,activeBlobUrls=[];function trackBlobUrl(url){activeBlobUrls.push(url);return url}function revokeBlobUrls(){activeBlobUrls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});activeBlobUrls=[]}
+function retryLastRom(){if(!lastRomArgs)return;loadEmuCore(lastRomArgs.container,lastRomArgs.romUrl,lastRomArgs.core,lastRomArgs.name)}
+
+// ===== FIXED: Added missing bufToDataUrl =====
+function bufToDataUrl(buf){
+  const bytes=new Uint8Array(buf);
+  let binary='';
+  const len=bytes.length;
+  for(let i=0;i<len;i++)binary+=String.fromCharCode(bytes[i]);
+  return 'data:application/octet-stream;base64,'+btoa(binary);
+}
+
+// ===== FIXED: Proper jsNES implementation =====
+let jsNESLoaded=false;
+function loadJsNESLib(){return new Promise((resolve,reject)=>{if(window.jsnes||jsNESLoaded){jsNESLoaded=true;return resolve()}const s=document.createElement('script');s.src='https://unpkg.com/jsnes@latest/dist/jsnes.min.js';s.onload=()=>{jsNESLoaded=true;resolve()};s.onerror=()=>reject(new Error('unpkg blocked'));document.head.appendChild(s)})}
+function abToBinaryString(buf){const bytes=new Uint8Array(buf);let binary='';for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);return binary}
+function dataUrlToBinaryString(dataUrl){return atob(dataUrl.split(',')[1])}
+
+let activeNesInstance=null,activeNesFrameId=null;
+function stopNes(){
+  if(activeNesFrameId){cancelAnimationFrame(activeNesFrameId);activeNesFrameId=null}
+  if(activeNesInstance){try{activeNesInstance.stop&&activeNesInstance.stop()}catch(e){}activeNesInstance=null}
+}
+
+function loadNesRom(container,binaryString,name){
+  container.innerHTML='';
+  container.style.display='block';
+  const wrapper=document.createElement('div');
+  wrapper.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;flex-direction:column;';
+  container.appendChild(wrapper);
+
+  const canvas=document.createElement('canvas');
+  canvas.width=256;canvas.height=240;
+  canvas.style.cssText='max-width:100%;max-height:100%;image-rendering:pixelated;image-rendering:crisp-edges;';
+  wrapper.appendChild(canvas);
+
+  const ctx=canvas.getContext('2d');
+  const imageData=ctx.createImageData(256,240);
+  const buf32=new Uint32Array(imageData.data.buffer);
+
+  function fitCanvas(){
+    const rect=wrapper.getBoundingClientRect();
+    const scale=Math.min(rect.width/256,rect.height/240,4);
+    canvas.style.width=(256*scale)+'px';
+    canvas.style.height=(240*scale)+'px';
+  }
+  fitCanvas();
+  window.addEventListener('resize',fitCanvas);
+
+  const keys={};
+  function onKey(e,down){const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','z','x','enter','shift'].includes(k)){e.preventDefault();keys[k]=down}}
+  document.addEventListener('keydown',e=>onKey(e,true));
+  document.addEventListener('keyup',e=>onKey(e,false));
+
+  const nes=new jsnes.NES({
+    onFrame:function(frameBuffer){
+      for(let i=0;i<frameBuffer.length;i++){buf32[i]=0xFF000000|frameBuffer[i];}
+      ctx.putImageData(imageData,0,0);
+    },
+    onAudioSample:function(left,right){},
+    onStatusUpdate:function(status){console.log('[FATE NES]',status);}
+  });
+
+  const BUTTON_A=0,BUTTON_B=1,BUTTON_SELECT=2,BUTTON_START=3,BUTTON_UP=4,BUTTON_DOWN=5,BUTTON_LEFT=6,BUTTON_RIGHT=7;
+
+  function updateController(){
+    if(keys['arrowup'])nes.buttonDown(1,BUTTON_UP);else nes.buttonUp(1,BUTTON_UP);
+    if(keys['arrowdown'])nes.buttonDown(1,BUTTON_DOWN);else nes.buttonUp(1,BUTTON_DOWN);
+    if(keys['arrowleft'])nes.buttonDown(1,BUTTON_LEFT);else nes.buttonUp(1,BUTTON_LEFT);
+    if(keys['arrowright'])nes.buttonDown(1,BUTTON_RIGHT);else nes.buttonUp(1,BUTTON_RIGHT);
+    if(keys['z'])nes.buttonDown(1,BUTTON_B);else nes.buttonUp(1,BUTTON_B);
+    if(keys['x'])nes.buttonDown(1,BUTTON_A);else nes.buttonUp(1,BUTTON_A);
+    if(keys['shift'])nes.buttonDown(1,BUTTON_SELECT);else nes.buttonUp(1,BUTTON_SELECT);
+    if(keys['enter'])nes.buttonDown(1,BUTTON_START);else nes.buttonUp(1,BUTTON_START);
+  }
+
+  try{nes.loadROM(binaryString);}catch(e){
+    wrapper.innerHTML='<div style="color:#ef4444;text-align:center;padding:2rem;font-family:Space Grotesk,sans-serif;"><h4>NES ROM Error</h4><p>'+escapeHtml(String(e))+'</p></div>';
+    return;
+  }
+
+  activeNesInstance=nes;
+  function frameLoop(){
+    if(!activeNesInstance)return;
+    updateController();
+    nes.frame();
+    activeNesFrameId=requestAnimationFrame(frameLoop);
+  }
+  activeNesFrameId=requestAnimationFrame(frameLoop);
+}
+
+function loadEmuCore(container,romUrl,core,name){
+  lastRomArgs={container,romUrl,core,name};
+  if(core==='nes'){
+    container.style.display='block';
+    container.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:2rem;"><div style="width:48px;height:48px;border:4px solid rgba(245,158,11,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:1.5rem;"></div><div style="font-family:Space Grotesk,sans-serif;font-size:1.1rem;color:var(--text);">Loading NES core...</div></div>';
+    const style=document.createElement('style');style.dataset.emuSpin='1';style.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(style);
+    loadJsNESLib().then(()=>{
+      if(romUrl.startsWith('data:')){
+        const binary=dataUrlToBinaryString(romUrl);
+        loadNesRom(container,binary,name);
+        style.remove();
+      }else{
+        fetch(romUrl).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer()}).then(buf=>{
+          const binary=abToBinaryString(buf);
+          loadNesRom(container,binary,name);
+          style.remove();
+        }).catch(err=>{
+          container.innerHTML='<div style="color:#ef4444;text-align:center;padding:2rem;font-family:Space Grotesk,sans-serif;"><h4>Load Failed</h4><p>'+escapeHtml(err.message)+'</p></div>';
+          style.remove();
+        });
+      }
+    }).catch(()=>{
+      container.innerHTML='<div style="color:#ef4444;text-align:center;padding:2rem;font-family:Space Grotesk,sans-serif;"><h4>CDN Blocked</h4><p>jsNES could not load from unpkg.<br>Your network or school firewall may be blocking it.</p></div>';
+      style.remove();
+    });
+    return;
+  }
+
+  container.innerHTML='';
+  container.style.display='block';
+  $('emuPlaceholder').style.display='none';
+
+  const iframe=document.createElement('iframe');
+  iframe.id='ejs-iframe';
+  iframe.style.cssText='width:100%;height:100%;border:0;display:block;background:#000;';
+  iframe.sandbox='allow-scripts allow-same-origin';
+  container.appendChild(iframe);
+
+  const safeName=name.replace(/'/g,"\\'").replace(/"/g,'\\"');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}#game{width:100%;height:100%}</style></head><body><div id="game"></div><script>window.EJS_player="#game";window.EJS_gameUrl="'+romUrl+'";window.EJS_core="'+core+'";window.EJS_pathtodata="https://cdn.emulatorjs.org/latest/data/";window.EJS_startOnLoaded=true;window.EJS_gameName="'+safeName+'";window.EJS_forceCanvas=true;<\/script><script src="https://cdn.emulatorjs.org/latest/data/loader.js"><\/script></body></html>';
+  iframe.srcdoc=html;
+}
+
+async function launchPreloaded(url,name,system){
+  cleanupEmu();
+  currentRom={name,system,id:'cdn_'+Date.now()};
+  const sys=SYSTEMS[system]||SYSTEMS.gba;
+  $('emuOverlay').classList.add('open');
+  $('emuTitle').textContent=name;
+  $('emuPlaceholder').style.display='none';
+  lastRomArgs={container:$('emuContainer'),romUrl:url,core:sys.core,name:name};
+  loadEmuCore($('emuContainer'),url,sys.core,name);
+}
+
+function initDragDrop(){const zone=$('uploadZone');['dragenter','dragover','dragleave','drop'].forEach(evt=>{zone.addEventListener(evt,(e)=>{e.preventDefault();e.stopPropagation()},false)});zone.addEventListener('dragenter',()=>zone.classList.add('dragover'));zone.addEventListener('dragover',()=>zone.classList.add('dragover'));zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));zone.addEventListener('drop',(e)=>{zone.classList.remove('dragover');const files=e.dataTransfer.files;if(files.length)processRomFile(files[0])})}
+function handleFileSelect(e){const file=e.target.files[0];if(file)processRomFile(file);e.target.value=''}
+function detectSystem(filename){const ext=filename.split('.').pop().toLowerCase();for(const[key,sys]of Object.entries(SYSTEMS)){if(sys.exts.includes(ext))return key}return activeSystem}
+
+async function processRomFile(file){const sys=detectSystem(file.name);const id='rom_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);const name=file.name.replace(/\.[^.]+$/,'');const buf=await file.arrayBuffer();await saveRomToDB(id,buf);romLibrary.unshift({id,name,system:sys,size:formatBytes(file.size),date:Date.now()});saveLibrary();renderLibrary();launchRom(id)}
+function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+
+function renderLibrary(){const grid=$('romGrid');$('libCount').textContent=romLibrary.length+' ROM'+(romLibrary.length!==1?'s':'');if(romLibrary.length===0){grid.innerHTML=`<div class="empty-roms" style="grid-column:1/-1;"><svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg><h4 style="font-family:'Space Grotesk',sans-serif;margin-bottom:.5rem;">No ROMs yet</h4><p>Upload a ROM file to get started</p></div>`;return}grid.innerHTML=romLibrary.map(rom=>{const sys=SYSTEMS[rom.system]||SYSTEMS.gba;const svg=ICONS[sys.icon]||ICONS.controller;return`<div class="rom-card" onclick="launchRom('${rom.id}')"><div class="rom-icon ${sys.color}">${svg}</div><div class="rom-info"><div class="rom-name">${escapeHtml(rom.name)}</div><div class="rom-meta">${sys.name} &middot; ${rom.size}</div></div><div class="rom-actions" onclick="event.stopPropagation()"><button class="rom-action" onclick="deleteRom('${rom.id}')" title="Delete"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`}).join('')}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+async function deleteRom(id){if(!confirm('Delete this ROM?'))return;romLibrary=romLibrary.filter(r=>r.id!==id);saveLibrary();await deleteRomFromDB(id);renderLibrary()}
+
+async function launchRom(id){const rom=romLibrary.find(r=>r.id===id);if(!rom)return;cleanupEmu();currentRom=rom;const sys=SYSTEMS[rom.system]||SYSTEMS.gba;const romData=await getRomFromDB(id);if(!romData){alert('ROM data not found. It may have been cleared.');return}const romUrl=trackBlobUrl(URL.createObjectURL(new Blob([romData])));$('emuOverlay').classList.add('open');$('emuTitle').textContent=rom.name;$('emuPlaceholder').style.display='none';lastRomArgs={container:$('emuContainer'),romUrl:romUrl,core:sys.core,name:rom.name};loadEmuCore($('emuContainer'),romUrl,sys.core,rom.name)}
+
+function cleanupEmu(){
+  stopNes();
+  revokeBlobUrls();
+  const container=$('emuContainer');
+  container.innerHTML='';
+  container.style.display='none';
+  $('emuPlaceholder').style.display='block';
+  const oldScript=document.getElementById('emulator-script');
+  if(oldScript)oldScript.remove();
+  const iframe=document.getElementById('ejs-iframe');
+  if(iframe){iframe.srcdoc='';iframe.remove()}
+  window.emulator=null;
+  lastRomArgs=null;
+}
+
+function closeEmu(){cleanupEmu();$('emuOverlay').classList.remove('open');$('emuContainer').style.display='none';$('emuPlaceholder').style.display='block';$('emuTitle').textContent='Emulator';currentRom=null}
+function fullscreenEmu(){const container=$('emuContainer');if(container.requestFullscreen)container.requestFullscreen();else if(container.webkitRequestFullscreen)container.webkitRequestFullscreen()}
+function toggleStatesPanel(){$('statesPanel').classList.toggle('open')}
+
+function initKeyboard(){document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'){if(e.key==='Escape')e.target.blur();return}const panic=localStorage.getItem(LS.PANIC);switch(e.key){case'Escape':closeEmu();toggleStatesPanel();break;case'f':case'F':if($('emuOverlay').classList.contains('open'))fullscreenEmu();break}if(panic&&e.key.toLowerCase()===panic.toLowerCase())triggerPanic()})}
+function triggerPanic(){window.location.href='https://clever.com'}
+
+function loadSettings(){const cloak=localStorage.getItem(LS.CLOAK)==='true';if(cloak)applyCloak()}
+function applyCloak(){document.title='Google Classroom';let link=document.querySelector("link[rel*='icon']");if(!link){link=document.createElement('link');link.rel='shortcut icon';document.head.appendChild(link)}link.href='https://www.gstatic.com/classroom/favicon.png'}
+function toggleSettings(){const on=!localStorage.getItem(LS.CLOAK)||localStorage.getItem(LS.CLOAK)==='false';localStorage.setItem(LS.CLOAK,on);if(on)applyCloak();else{document.title='FATE V5 — Emulator';const link=document.querySelector("link[rel*='icon']");if(link)link.href='media/logo.svg'}}
+
+function toggleFab(){$('fabBtn').classList.toggle('active');$('fabMenu').classList.toggle('open');$('fabBackdrop').classList.toggle('open')}
+
+const canvas=$('particleCanvas'),ctx=canvas.getContext('2d');let particles=[],mouseX=0,mouseY=0;
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+class Particle{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.vx=(Math.random()-.5)*0.4;this.vy=(Math.random()-.5)*0.4;this.size=Math.random()*2+0.5;this.opacity=Math.random()*0.4+0.1}update(){this.x+=this.vx;this.y+=this.vy;const dx=mouseX-this.x,dy=mouseY-this.y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<150){this.vx-=dx*0.0003;this.vy-=dy*0.0003}if(this.x<0||this.x>canvas.width)this.vx*=-1;if(this.y<0||this.y>canvas.height)this.vy*=-1}draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(245,158,11,${this.opacity})`;ctx.fill()}}
+function animateParticles(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(245,158,11,${0.08*(1-dist/120)})`;ctx.lineWidth=0.5;ctx.stroke()}}}particles.forEach(p=>{p.update();p.draw()});requestAnimationFrame(animateParticles)}
+function initParticles(){resizeCanvas();window.addEventListener('resize',resizeCanvas);for(let i=0;i<50;i++)particles.push(new Particle());animateParticles()}
+function initMouseGlow(){const glow=$('mouseGlow');document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px';glow.style.opacity='1'});document.addEventListener('mouseleave',()=>{glow.style.opacity='0'})}
+
+document.addEventListener('DOMContentLoaded',init);
+console.log("%cFATE%c V5 Emulator","font-size:16px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:8px 0 0 8px;padding:6px 12px;font-weight:bold;color:white;","font-size:16px;background:#050505;font-weight:bold;padding:6px 12px;border-radius:0 8px 8px 0;color:#f59e0b;");
+
+(function(){var bg=document.querySelector('.bg-image'),overlay=document.querySelector('.bg-overlay');if(!bg||!overlay)return;var bgKey=localStorage.getItem('fate_v5_bg')||'default',customUrl=localStorage.getItem('fate_v5_bg_custom')||'',opacity=localStorage.getItem('fate_v5_bg_opacity');if(opacity===null)opacity=55;var blur=localStorage.getItem('fate_v5_bg_blur');if(blur===null)blur='true';var presets={default:'/img/background.png',none:'',gif1:'https://media.giphy.com/media/3o7abAH6Y8g0yZ7dqU/giphy.gif',gif2:'https://media.giphy.com/media/WoD6FZn9GAO1y/giphy.gif',gif3:'https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif'};var url='';if(bgKey==='custom'&&customUrl)url=customUrl;else if(presets[bgKey])url=presets[bgKey];if(url){bg.style.backgroundImage='url('+url+')';bg.style.display='block'}else{bg.style.backgroundImage='none';bg.style.display='none'}overlay.style.background='rgba(5,5,5,'+(opacity/100)+')';if(blur==='true'){overlay.style.backdropFilter='blur(4px)';overlay.style.webkitBackdropFilter='blur(4px)'}else{overlay.style.backdropFilter='none';overlay.style.webkitBackdropFilter='none'}})();
+</script>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FATE V5 — Settings</title>
+<link rel="shortcut icon" href="media/logo.svg" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#f59e0b;
+  --secondary:#ef4444;
+  --accent:#10b981;
+  --bg-deep:#050505;
+  --glass:rgba(0,0,0,0.55);
+  --glass-border:rgba(255,255,255,0.1);
+  --text:#f8fafc;
+  --text-muted:#cbd5e1;
+  --card-bg:rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg-deep);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+.bg-image{position:fixed;inset:0;z-index:0;background:url('/img/background.png') center center/cover no-repeat}
+.bg-overlay{position:fixed;inset:0;z-index:1;background:rgba(5,5,5,0.55);backdrop-filter:blur(4px)}
+#particleCanvas{position:fixed;inset:0;z-index:2;pointer-events:none}
+#mouseGlow{position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,0.12) 0%,transparent 70%);pointer-events:none;z-index:3;transform:translate(-50%,-50%);transition:opacity .3s;opacity:0}
+
+.main{position:relative;z-index:4;max-width:800px;margin:0 auto;padding:40px 24px}
+.page-header{text-align:center;margin-bottom:3rem}
+.page-header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(2rem,6vw,3rem);font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 0%,#fcd34d 50%,#f59e0b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-header p{color:var(--text-muted);margin-top:.5rem;font-size:1rem}
+
+.settings-grid{display:flex;flex-direction:column;gap:1.5rem}
+.setting-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:20px;padding:1.5rem;transition:all .3s ease}
+.setting-card:hover{border-color:rgba(245,158,11,0.2)}
+.setting-header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.setting-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.15));display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0}
+.setting-icon svg{width:20px;height:20px;fill:currentColor}
+.setting-title{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600}
+.setting-desc{font-size:.875rem;color:var(--text-muted);margin-top:2px}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.875rem 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.toggle-row:first-child{padding-top:0}
+.toggle-info{flex:1;min-width:0}
+.toggle-label{font-weight:500;font-size:.95rem;display:block;margin-bottom:2px}
+.toggle-hint{font-size:.8rem;color:#64748b}
+.toggle{position:relative;width:50px;height:26px;background:rgba(255,255,255,0.05);border-radius:13px;cursor:pointer;transition:background .3s ease;border:1px solid var(--glass-border);flex-shrink:0;margin-left:1rem}
+.toggle.on{background:var(--primary);border-color:var(--primary)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .3s ease}
+.toggle.on::after{transform:translateX(24px)}
+
+.setting-btn{padding:10px 18px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--text-muted);font-size:.875rem;font-weight:500;cursor:pointer;transition:all .3s ease;display:inline-flex;align-items:center;gap:8px}
+.setting-btn:hover{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:#fff;transform:translateY(-1px)}
+.setting-btn.danger:hover{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#ef4444}
+
+.key-display{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-family:monospace;font-size:.9rem;color:var(--primary);font-weight:600}
+.range-wrap{display:flex;align-items:center;gap:1rem}
+.range-wrap input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:rgba(255,255,255,0.08);outline:none}
+.range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));cursor:pointer;box-shadow:0 0 10px rgba(245,158,11,0.4)}
+.range-value{min-width:40px;text-align:right;font-family:monospace;font-size:.9rem;color:var(--primary);font-weight:600}
+
+/* Background presets */
+.bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:.75rem}
+.bg-option{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .3s ease;height:80px;background-size:cover;background-position:center}
+.bg-option:hover{transform:scale(1.03)}
+.bg-option.active{border-color:var(--primary);box-shadow:0 0 0 3px rgba(245,158,11,0.2)}
+.bg-option .bg-label{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:rgba(0,0,0,0.7);font-size:.75rem;font-weight:600;text-align:center;color:#fff}
+.bg-option.solid-dark{background:linear-gradient(135deg,#0f0f0f,#1a1a1a)}
+.bg-option.solid-purple{background:linear-gradient(135deg,#1a0a2e,#2d1b4e)}
+.bg-option.solid-blue{background:linear-gradient(135deg,#0a1628,#0d1b2a)}
+
+/* Custom URL input */
+.url-input{width:100%;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--text);font-size:.9rem;outline:none;margin-top:.5rem;transition:all .3s}
+.url-input:focus{border-color:rgba(245,158,11,0.4)}
+
+.toast-container{position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:12px;background:rgba(10,10,10,0.95);border:1px solid var(--glass-border);color:var(--text);font-size:.9rem;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:toastIn .3s ease;max-width:320px;backdrop-filter:blur(10px)}
+.toast.ok{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)}
+.toast.bad{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.fab-container{position:fixed;bottom:24px;left:24px;z-index:100;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.fab-btn{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;box-shadow:0 8px 32px rgba(245,158,11,0.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative;z-index:102}
+.fab-btn:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(245,158,11,0.6)}
+.fab-btn .line{display:block;width:22px;height:2.5px;background:white;border-radius:2px;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.fab-btn.open .line:nth-child(1){transform:translateY(7.5px) rotate(45deg)}
+.fab-btn.open .line:nth-child(2){opacity:0;transform:scaleX(0)}
+.fab-btn.open .line:nth-child(3){transform:translateY(-7.5px) rotate(-45deg)}
+.fab-menu{position:absolute;bottom:70px;left:0;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(20px) scale(.8);transform-origin:bottom left;pointer-events:none;transition:all .4s cubic-bezier(.34,1.56,.64,1)}
+.fab-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.fab-item{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(5,5,5,0.85);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;color:var(--text);text-decoration:none;font-weight:500;font-size:.95rem;white-space:nowrap;opacity:0;transform:translateX(-30px);transition:all .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.fab-menu.open .fab-item{opacity:1;transform:translateX(0)}
+.fab-menu.open .fab-item:nth-child(1){transition-delay:.05s}
+.fab-menu.open .fab-item:nth-child(2){transition-delay:.1s}
+.fab-menu.open .fab-item:nth-child(3){transition-delay:.15s}
+.fab-menu.open .fab-item:nth-child(4){transition-delay:.2s}
+.fab-item:hover{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);transform:translateX(6px)}
+.fab-item:hover span{color:#fcd34d}
+.fab-item svg{width:20px;height:20px;fill:var(--primary);flex-shrink:0}
+.fab-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);z-index:99;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.fab-backdrop.open{opacity:1;pointer-events:all}
+
+.footer{margin-top:4rem;padding:2rem;text-align:center;border-top:1px solid var(--glass-border);color:var(--text-muted);font-size:.875rem}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg-deep)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--primary),var(--secondary));border-radius:4px}
+
+@media(max-width:640px){
+  .main{padding:24px 16px}
+  .fab-container{bottom:16px;left:16px}
+  .fab-btn{width:50px;height:50px}
+  .bg-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="bg-image" id="bgImage"></div>
+<div class="bg-overlay" id="bgOverlay"></div>
+<canvas id="particleCanvas"></canvas>
+<div id="mouseGlow"></div>
+
+<div class="fab-backdrop" id="fabBackdrop" onclick="toggleFab()"></div>
+<div class="fab-container">
+  <div class="fab-menu" id="fabMenu">
+    <a href="index.html" class="fab-item">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="games.html" class="fab-item">
+      <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      <span>Games</span>
+    </a>
+<a href="s.html" class="fab-item">
+    <svg viewBox="0 0 24 24">
+        <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/>
+    </svg>
+    <span>Music</span>
+</a>
+<a href="x.html" class="fab-item">
+    <svg viewBox="0 0 24 24">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7 5h2v3H7V5zm4 0h2v3h-2V5zm4 0h2v3h-2V5zM5 10h14v9H5v-9zm2 2v5h10v-5H7z"/>
+    </svg>
+    <span>Movies</span>
+</a>
+    <a href="https://discord.gg/MfEnRxxxA" target="_blank" class="fab-item">
+      <svg viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span>Discord</span>
+    </a>
+    <a href="settings.html" class="fab-item">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <span>Settings</span>
+    </a>
+  </div>
+  <button class="fab-btn" id="fabBtn" onclick="toggleFab()" aria-label="Menu">
+    <span class="line"></span>
+    <span class="line"></span>
+    <span class="line"></span>
+  </button>
+</div>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Customize your FATE V5 experience</p>
+  </div>
+
+  <div class="settings-grid">
+    <!-- Background -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">Background</div>
+          <div class="setting-desc">Pick a vibe</div>
+        </div>
+      </div>
+
+      <div class="bg-grid" id="bgGrid">
+        <div class="bg-option active" data-bg="default" style="background-image:url('/img/background.png')">
+          <div class="bg-label">Default</div>
+        </div>
+        <div class="bg-option solid-dark" data-bg="none">
+          <div class="bg-label">Solid</div>
+        </div>
+        <div class="bg-option" data-bg="gif1" style="background-image:url('https://media.giphy.com/media/3o7abAH6Y8g0yZ7dqU/giphy.gif')">
+          <div class="bg-label">Space</div>
+        </div>
+        <div class="bg-option" data-bg="gif2" style="background-image:url('https://media.giphy.com/media/WoD6FZn9GAO1y/giphy.gif')">
+          <div class="bg-label">Matrix</div>
+        </div>
+        <div class="bg-option" data-bg="gif3" style="background-image:url('https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif')">
+          <div class="bg-label">Cyber</div>
+        </div>
+        <div class="bg-option" data-bg="custom" id="bgCustomPreview" style="background:linear-gradient(135deg,#333,#111)">
+          <div class="bg-label">Custom</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <span class="toggle-label">Custom URL</span>
+        <span class="toggle-hint" style="display:block;margin-bottom:6px">Paste a GIF or image link</span>
+        <input type="text" class="url-input" id="customBgUrl" placeholder="https://example.com/background.gif" onchange="applyCustomBg(this.value)">
+      </div>
+
+      <div class="toggle-row" style="margin-top:.75rem">
+        <div class="toggle-info">
+          <span class="toggle-label">Overlay Darkness</span>
+          <span class="toggle-hint">How dark the tint is</span>
+        </div>
+        <div class="range-wrap" style="flex:0 0 140px;margin-left:1rem;margin-top:0;">
+          <input type="range" id="overlayRange" min="0" max="90" value="55" oninput="updateOverlay(this.value)">
+          <span class="range-value" id="overlayValue">55%</span>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Blur Overlay</span>
+          <span class="toggle-hint">Softens the background</span>
+        </div>
+        <div class="toggle on" id="blurToggle" onclick="toggleBlur()"></div>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">Privacy & Safety</div>
+          <div class="setting-desc">Stay under the radar</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Cloak Mode</span>
+          <span class="toggle-hint">Disguises the tab as Google Classroom</span>
+        </div>
+        <div class="toggle" id="cloakToggle" onclick="toggleCloak()"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Panic Key</span>
+          <span class="toggle-hint">Press to instantly redirect to Clever</span>
+        </div>
+        <button class="setting-btn" id="panicKeyBtn" onclick="setPanicKey()">
+          <span id="panicKeyLabel">Set Key</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">Appearance</div>
+          <div class="setting-desc">Make it yours</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Particles</span>
+          <span class="toggle-hint">Animated background particles</span>
+        </div>
+        <div class="toggle on" id="particlesToggle" onclick="toggleParticles()"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Mouse Glow</span>
+          <span class="toggle-hint">Cursor spotlight effect</span>
+        </div>
+        <div class="toggle on" id="glowToggle" onclick="toggleGlow()"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Particle Count</span>
+          <span class="toggle-hint">Adjust background density</span>
+        </div>
+        <div class="range-wrap" style="flex:0 0 140px;margin-left:1rem;margin-top:0;">
+          <input type="range" id="particleRange" min="0" max="150" value="50" oninput="updateParticleCount(this.value)">
+          <span class="range-value" id="particleValue">50</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Behavior -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">Behavior</div>
+          <div class="setting-desc">How FATE V5 works</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Open Games in New Tab</span>
+          <span class="toggle-hint">Bypass iframe restrictions on some networks</span>
+        </div>
+        <div class="toggle" id="newTabToggle" onclick="toggleNewTab()"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Smooth Scroll</span>
+          <span class="toggle-hint">Animated page scrolling</span>
+        </div>
+        <div class="toggle on" id="smoothScrollToggle" onclick="toggleSmoothScroll()"></div>
+      </div>
+    </div>
+
+    <!-- Data -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">Data & Storage</div>
+          <div class="setting-desc">Manage your local data</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Export Favorites</span>
+          <span class="toggle-hint">Download your favorites as JSON</span>
+        </div>
+        <button class="setting-btn" onclick="exportFavorites()">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Export
+        </button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label">Import Favorites</span>
+          <span class="toggle-hint">Restore from a JSON file</span>
+        </div>
+        <button class="setting-btn" onclick="document.getElementById('importInput').click()">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+          Import
+        </button>
+        <input type="file" id="importInput" accept=".json" style="display:none" onchange="importFavorites(this)">
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-label" style="color:#ef4444">Clear All Data</span>
+          <span class="toggle-hint">Removes favorites, recents, and all preferences</span>
+        </div>
+        <button class="setting-btn danger" onclick="clearAllData()">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="setting-card">
+      <div class="setting-header">
+        <div class="setting-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
+        <div>
+          <div class="setting-title">About FATE V5</div>
+          <div class="setting-desc">Version info and shortcuts</div>
+        </div>
+      </div>
+      <div style="padding:.5rem 0;color:var(--text-muted);font-size:.9rem;line-height:1.8">
+        <p><strong style="color:var(--text)">Version:</strong> 5.0.0</p>
+        <p style="margin-top:8px"><strong style="color:var(--text)">Keyboard Shortcuts:</strong></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:8px;font-size:.85rem">
+          <div><span class="key-display">/</span> Search games</div>
+          <div><span class="key-display">ESC</span> Close popup</div>
+          <div><span class="key-display">F</span> Fullscreen</div>
+          <div><span class="key-display">R</span> Random game</div>
+          <div><span class="key-display">L</span> Toggle favorites</div>
+          <div><span class="key-display">?</span> Show shortcuts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <p>FATE V5 — Made with <span style="color:#ef4444;">&#10084;</span></p>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ========== CONFIG ========== */
+var BG_PRESETS = {
+  default: '/img/background.png',
+  none: '',
+  gif1: 'https://media.giphy.com/media/3o7abAH6Y8g0yZ7dqU/giphy.gif',
+  gif2: 'https://media.giphy.com/media/WoD6FZn9GAO1y/giphy.gif',
+  gif3: 'https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif'
+};
+
+var LS = {
+  FAV: 'fate_v5_favorites',
+  RECENT: 'fate_v5_recent',
+  CLOAK: 'fate_v5_cloak',
+  PANIC: 'fate_v5_panic',
+  PARTICLES: 'fate_v5_particles',
+  GLOW: 'fate_v5_glow',
+  PARTICLE_COUNT: 'fate_v5_particle_count',
+  NEW_TAB: 'fate_v5_newtab',
+  SMOOTH: 'fate_v5_smooth',
+  BG: 'fate_v5_bg',
+  BG_CUSTOM: 'fate_v5_bg_custom',
+  BG_OPACITY: 'fate_v5_bg_opacity',
+  BG_BLUR: 'fate_v5_bg_blur'
+};
+
+function $(id){ return document.getElementById(id); }
+
+function toast(msg, type){
+  type = type || 'ok';
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  $('toastContainer').appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3500);
+}
+
+/* ========== BACKGROUND ========== */
+function applyBackground(){
+  var bgKey = localStorage.getItem(LS.BG) || 'default';
+  var customUrl = localStorage.getItem(LS.BG_CUSTOM) || '';
+  var opacity = localStorage.getItem(LS.BG_OPACITY);
+  if(opacity === null) opacity = 55;
+  var blur = localStorage.getItem(LS.BG_BLUR);
+  if(blur === null) blur = 'true';
+
+  var bgImage = $('bgImage');
+  var bgOverlay = $('bgOverlay');
+
+  var url = '';
+  if(bgKey === 'custom' && customUrl){
+    url = customUrl;
+  } else if(BG_PRESETS[bgKey]){
+    url = BG_PRESETS[bgKey];
+  } else if(bgKey === 'none'){
+    url = '';
+  } else {
+    url = BG_PRESETS.default;
+  }
+
+  if(url){
+    bgImage.style.backgroundImage = 'url(' + url + ')';
+    bgImage.style.display = 'block';
+  } else {
+    bgImage.style.backgroundImage = 'none';
+    bgImage.style.display = 'none';
+  }
+
+  bgOverlay.style.background = 'rgba(5,5,5,' + (opacity / 100) + ')';
+  if(blur === 'true'){
+    bgOverlay.style.backdropFilter = 'blur(4px)';
+    bgOverlay.style.webkitBackdropFilter = 'blur(4px)';
+  } else {
+    bgOverlay.style.backdropFilter = 'none';
+    bgOverlay.style.webkitBackdropFilter = 'none';
+  }
+
+  var opts = document.querySelectorAll('.bg-option');
+  for(var i = 0; i < opts.length; i++){
+    opts[i].classList.remove('active');
+    if(opts[i].dataset.bg === bgKey) opts[i].classList.add('active');
+  }
+
+  if(bgKey === 'custom' && customUrl){
+    $('bgCustomPreview').style.backgroundImage = 'url(' + customUrl + ')';
+  }
+
+  $('overlayRange').value = opacity;
+  $('overlayValue').textContent = opacity + '%';
+
+  var blurToggle = $('blurToggle');
+  if(blur === 'true') blurToggle.classList.add('on');
+  else blurToggle.classList.remove('on');
+}
+
+function selectBg(key){
+  localStorage.setItem(LS.BG, key);
+  applyBackground();
+  toast('Background updated');
+}
+
+function applyCustomBg(url){
+  if(!url) return;
+  localStorage.setItem(LS.BG, 'custom');
+  localStorage.setItem(LS.BG_CUSTOM, url);
+  applyBackground();
+  toast('Custom background applied');
+}
+
+function updateOverlay(val){
+  localStorage.setItem(LS.BG_OPACITY, val);
+  $('overlayValue').textContent = val + '%';
+  applyBackground();
+}
+
+function toggleBlur(){
+  var on = $('blurToggle').classList.toggle('on');
+  localStorage.setItem(LS.BG_BLUR, on);
+  applyBackground();
+  toast(on ? 'Blur enabled' : 'Blur disabled');
+}
+
+/* ========== OTHER SETTINGS ========== */
+function loadSettings(){
+  applyBackground();
+
+  if(localStorage.getItem(LS.CLOAK) === 'true'){
+    $('cloakToggle').classList.add('on');
+    applyCloak();
+  }
+  var panic = localStorage.getItem(LS.PANIC);
+  if(panic) $('panicKeyLabel').textContent = panic.toUpperCase();
+
+  if(localStorage.getItem(LS.PARTICLES) === 'false'){
+    $('particlesToggle').classList.remove('on');
+  }
+  if(localStorage.getItem(LS.GLOW) === 'false'){
+    $('glowToggle').classList.remove('on');
+    var g = $('mouseGlow');
+    if(g) g.style.display = 'none';
+  }
+  var count = localStorage.getItem(LS.PARTICLE_COUNT);
+  if(count !== null){
+    $('particleRange').value = count;
+    $('particleValue').textContent = count;
+  }
+  if(localStorage.getItem(LS.NEW_TAB) === 'true'){
+    $('newTabToggle').classList.add('on');
+  }
+  if(localStorage.getItem(LS.SMOOTH) === 'false'){
+    $('smoothScrollToggle').classList.remove('on');
+    document.documentElement.style.scrollBehavior = 'auto';
+  }
+
+  var customUrl = localStorage.getItem(LS.BG_CUSTOM);
+  if(customUrl) $('customBgUrl').value = customUrl;
+}
+
+function toggleCloak(){
+  var on = $('cloakToggle').classList.toggle('on');
+  localStorage.setItem(LS.CLOAK, on);
+  if(on) applyCloak(); else removeCloak();
+  toast(on ? 'Cloak mode enabled' : 'Cloak mode disabled');
+}
+function applyCloak(){
+  document.title = 'Google Classroom';
+  var link = document.querySelector("link[rel*='icon']");
+  if(!link){ link = document.createElement('link'); link.rel='shortcut icon'; document.head.appendChild(link); }
+  link.href = 'https://www.gstatic.com/classroom/favicon.png';
+}
+function removeCloak(){
+  document.title = 'FATE V5 — Settings';
+  var link = document.querySelector("link[rel*='icon']");
+  if(link) link.href = 'media/logo.svg';
+}
+
+function setPanicKey(){
+  var key = prompt('Enter the key you want as panic key (or Cancel to remove):');
+  if(key === null){
+    localStorage.removeItem(LS.PANIC);
+    $('panicKeyLabel').textContent = 'Set Key';
+    toast('Panic key removed');
+  } else if(key.length === 1){
+    var k = key.toLowerCase();
+    localStorage.setItem(LS.PANIC, k);
+    $('panicKeyLabel').textContent = k.toUpperCase();
+    toast('Panic key set to ' + k.toUpperCase());
+  } else {
+    toast('Please enter a single key', 'bad');
+  }
+}
+function triggerPanic(){
+  window.location.href = 'https://clever.com';
+}
+
+var particlesEnabled = true;
+var particleCount = 50;
+var canvas, ctx, particles = [], mouseX = 0, mouseY = 0;
+
+function toggleParticles(){
+  particlesEnabled = $('particlesToggle').classList.toggle('on');
+  localStorage.setItem(LS.PARTICLES, particlesEnabled);
+  if(!particlesEnabled && ctx){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  toast(particlesEnabled ? 'Particles enabled' : 'Particles disabled');
+}
+function updateParticleCount(val){
+  particleCount = parseInt(val);
+  $('particleValue').textContent = val;
+  localStorage.setItem(LS.PARTICLE_COUNT, val);
+  particles = [];
+  for(var i = 0; i < particleCount; i++) particles.push(new Particle());
+}
+
+function toggleGlow(){
+  var on = $('glowToggle').classList.toggle('on');
+  localStorage.setItem(LS.GLOW, on);
+  var g = $('mouseGlow');
+  if(g) g.style.display = on ? 'block' : 'none';
+  toast(on ? 'Mouse glow enabled' : 'Mouse glow disabled');
+}
+
+function toggleNewTab(){
+  var on = $('newTabToggle').classList.toggle('on');
+  localStorage.setItem(LS.NEW_TAB, on);
+  toast(on ? 'Games will open in new tab' : 'Games will open in popup');
+}
+
+function toggleSmoothScroll(){
+  var on = $('smoothScrollToggle').classList.toggle('on');
+  localStorage.setItem(LS.SMOOTH, on);
+  document.documentElement.style.scrollBehavior = on ? 'smooth' : 'auto';
+  toast(on ? 'Smooth scroll enabled' : 'Smooth scroll disabled');
+}
+
+function exportFavorites(){
+  try{
+    var favs = JSON.parse(localStorage.getItem(LS.FAV)) || [];
+    var data = {favorites: favs, exported: new Date().toISOString(), app: 'FATE V5'};
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fate_v5_favorites.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Favorites exported');
+  }catch(e){ toast('Export failed', 'bad'); }
+}
+function importFavorites(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(data.favorites && Array.isArray(data.favorites)){
+        localStorage.setItem(LS.FAV, JSON.stringify(data.favorites));
+        toast('Favorites imported (' + data.favorites.length + ')');
+      } else {
+        toast('Invalid file format', 'bad');
+      }
+    }catch(err){ toast('Import failed', 'bad'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function clearAllData(){
+  if(!confirm('This will erase ALL saved data including favorites, recents, and settings. Continue?')) return;
+  Object.values(LS).forEach(function(k){ localStorage.removeItem(k); });
+  toast('All data cleared. Reloading...');
+  setTimeout(function(){ location.reload(); }, 1200);
+}
+
+document.addEventListener('keydown', function(e){
+  var panic = localStorage.getItem(LS.PANIC);
+  if(panic && e.key.toLowerCase() === panic.toLowerCase()) triggerPanic();
+});
+
+function toggleFab(){
+  $('fabBtn').classList.toggle('open');
+  $('fabMenu').classList.toggle('open');
+  $('fabBackdrop').classList.toggle('open');
+}
+
+function resizeCanvas(){
+  if(!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function Particle(){
+  this.x = Math.random() * canvas.width;
+  this.y = Math.random() * canvas.height;
+  this.vx = (Math.random() - 0.5) * 0.4;
+  this.vy = (Math.random() - 0.5) * 0.4;
+  this.size = Math.random() * 2 + 0.5;
+  this.opacity = Math.random() * 0.4 + 0.1;
+}
+Particle.prototype.update = function(){
+  this.x += this.vx; this.y += this.vy;
+  var dx = mouseX - this.x, dy = mouseY - this.y;
+  var dist = Math.sqrt(dx*dx + dy*dy);
+  if(dist < 150){ this.vx -= dx * 0.0003; this.vy -= dy * 0.0003; }
+  if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
+  if(this.y < 0 || this.y > canvas.height) this.vy *= -1;
+};
+Particle.prototype.draw = function(){
+  ctx.beginPath();
+  ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(245,158,11,' + this.opacity + ')';
+  ctx.fill();
+};
+
+function animateParticles(){
+  if(!particlesEnabled || !ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for(var i = 0; i < particles.length; i++){
+    for(var j = i + 1; j < particles.length; j++){
+      var dx = particles[i].x - particles[j].x;
+      var dy = particles[i].y - particles[j].y;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist < 120){
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = 'rgba(245,158,11,' + (0.08 * (1 - dist/120)) + ')';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  for(var k = 0; k < particles.length; k++){
+    particles[k].update();
+    particles[k].draw();
+  }
+  requestAnimationFrame(animateParticles);
+}
+
+function initParticles(){
+  canvas = $('particleCanvas');
+  if(!canvas || !canvas.getContext) return;
+  ctx = canvas.getContext('2d');
+  if(!ctx) return;
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  var count = parseInt(localStorage.getItem(LS.PARTICLE_COUNT)) || 50;
+  particleCount = count;
+  for(var i = 0; i < count; i++) particles.push(new Particle());
+  animateParticles();
+}
+
+function initMouseGlow(){
+  var glow = $('mouseGlow');
+  if(!glow) return;
+  document.addEventListener('mousemove', function(e){
+    mouseX = e.clientX; mouseY = e.clientY;
+    glow.style.left = e.clientX + 'px';
+    glow.style.top = e.clientY + 'px';
+    glow.style.opacity = '1';
+  });
+  document.addEventListener('mouseleave', function(){
+    glow.style.opacity = '0';
+  });
+}
+
+/* ========== INIT ========== */
+document.addEventListener('DOMContentLoaded', function(){
+  loadSettings();
+  initParticles();
+  initMouseGlow();
+
+  var bgOpts = document.querySelectorAll('.bg-option');
+  for(var i = 0; i < bgOpts.length; i++){
+    bgOpts[i].addEventListener('click', function(){
+      selectBg(this.dataset.bg);
+    });
+  }
+});
+</script>
+</body>
+</html>
+
