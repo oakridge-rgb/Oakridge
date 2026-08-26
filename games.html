@@ -403,6 +403,16 @@ body{background:var(--bg-deep);color:var(--text);font-family:"Inter",sans-serif;
   <p>FATE V5 — Made with <span style="color:#ef4444;">❤</span></p>
 </footer>
 <script>
+  /* ===== CLOUDFLARE PROXY ROUTING ===== */
+const PROXY_BASE = '/proxy?url=';
+
+function getProxiedUrl(rawUrl){
+  if(!rawUrl || rawUrl.startsWith(PROXY_BASE) || rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl === '#') return rawUrl;
+  return PROXY_BASE + encodeURIComponent(rawUrl);
+}
+/* ===== END PROXY ROUTING ===== */
+
+  //* hi //*
 const LS = {
   FAV: 'fate_v5_favorites',
   RECENT: 'fate_v5_recent',
